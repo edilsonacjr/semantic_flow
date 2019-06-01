@@ -210,6 +210,11 @@ def generate_markov(comm_labels, cuts, book_names, markov_dir, save_markov=True)
         return all_markov_nets
 
 
+def motif_extraction():
+    motifs = []
+
+    return motifs
+
 def main(args):
 
     texts, labels = load_data(args.book_list_file, args.label_list_file, args.book_dir)
@@ -227,7 +232,7 @@ def main(args):
 
     comm_labels = detect_community(nets, args.comm_method, book_list, args.net_dir, args.save_labels)
 
-    generate_markov(comm_labels, cuts, book_list, args.markov_dir, args.save_markov)
+    markov_nets = generate_markov(comm_labels, cuts, book_list, args.markov_dir, args.save_markov)
 
     #texts, labels = load_data('book_list_CAT.txt', 'label_list_CAT.txt', 'data/livrosCategorias')
 

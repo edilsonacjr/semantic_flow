@@ -33,3 +33,10 @@ def to_xnet(g, file_name, names=True):
         for e, w in zip(g.es, g.es['weight']):
             xnet_file.write('%d %d %f\n' % (e.source, e.target, w))
 
+
+def extract_motif():
+    pass
+
+
+def extract_weighted_motif():
+    pass
