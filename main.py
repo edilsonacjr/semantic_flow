@@ -160,7 +160,7 @@ def generate_net(texts_sents, model, book_names, sent_dir, net_dir, save_nets=Tr
 def detect_community(nets, method, book_names, net_dir, save_labels=True):
     comm_labels = []
     for g, book_name in zip(nets, book_names):
-        if method == 'community_multilevel':
+        if method == 'community_multilevel' or method == 'community_leading_eigenvector':
             comm = getattr(g, method)()
         else:
             comm = getattr(g, method)()
@@ -251,6 +251,9 @@ def parse_arguments(argv):
     parser.add_argument('--net_dir', type=str, help='Directory to save net format', default='nets/')
     parser.add_argument('--save_graphs', help='Saves all networks in xnet format.', action='store_true')
     parser.add_argument('--save_labels', help='Saves all detected communities in a txt file.', action='store_true')
+    parser.add_argument('--comm_method', type=str, choices=['community_multilevel', 'community_leading_eigenvector',
+                                                            'community_fastgreedy', 'community_walktrap'],
+                        help='Community method to use.', default='community_multilevel')
     parser.add_argument('--markov_dir', type=str, help='Directory to save net format', default='markov/')
     parser.add_argument('--save_markov', help='Saves all markov nets.', action='store_true')
     parser.add_argument('--range_cut_begin', type=float, help='Markov range cut (begin)', default=0.01)
