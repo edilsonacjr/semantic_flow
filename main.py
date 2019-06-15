@@ -7,6 +7,9 @@ import argparse
 
 import nltk
 import numpy as np
+import pandas as pd
+
+from collections import defaultdict
 
 from sklearn.metrics.pairwise import euclidean_distances
 
@@ -14,6 +17,8 @@ from igraph import Graph, ADJ_UNDIRECTED
 from gensim.models import Word2Vec
 
 from utils import to_xnet
+from utils import extract_motif
+from utils import extract_weighted_motif
 
 # File with the list of books to be used.
 BOOKS = 'book_list_CAT.txt'
@@ -23,11 +28,10 @@ BOOKS_DIR = 'data/cat/'
 WORD2VEC_FILE = ''
 
 # Log file
-LOG_FILE = 'log.txt'
-
-
+LOG_FILE = 'log.txt']
 
 def main_old(args):
+
     tokenize = nltk.tokenize.RegexpTokenizer('(?u)\\b\\w\\w+\\b')
 
     stopwords = nltk.corpus.stopwords.words('english')
@@ -35,7 +39,6 @@ def main_old(args):
 
     with open(BOOKS, 'r') as f_books:
         book_list = f_books.read().split()
-
 
     for book in book_list:
         with open(BOOKS_DIR+book, 'r') as book_file:
@@ -210,10 +213,35 @@ def generate_markov(comm_labels, cuts, book_names, markov_dir, save_markov=True)
         return all_markov_nets
 
 
-def motif_extraction():
-    motifs = []
+def motif_extraction(networks, cuts, book_names, motif_dir, save_motifs=True):
+    motifs = defaultdict(list)
+    weighted_motif = defaultdict(list)
 
-    return motifs
+
+    cuts = ['full'] + cuts
+    for book_nets, book_name in zip(networks, book_names):
+
+        for individual_net, cut in zip(book_nets, cuts):
+            motif_freq, motif_perce, weighted_motifs = extract_weighted_motif(individual_net)
+            motif_freq, motif_perce = extract_motif(individual_net)
+
+            motifs[cut].append(motif_freq + [book_name])
+            weighted_motif[cut].append(weighted_motifs + [book_name])
+
+    out_motifs = []
+    out_weighted = []
+    if save_motifs:
+        for cut in cuts:
+            df_motif = pd.DataFrame(motifs[cut])
+            df_motif.to_csv(os.path.join(motif_dir, book_name + '_' + str(cut) + '.csv'))
+            out_motifs.append(df_motif)
+
+            df_weighted = pd.DataFrame(motifs[cut])
+            df_weighted.to_csv(os.path.join(motif_dir, book_name + '_weighted_' + str(cut) + '.csv'))
+            out_weighted.append(df_weighted)
+
+    return out_motifs, out_weighted
+
 
 def main(args):
 
@@ -233,6 +261,8 @@ def main(args):
     comm_labels = detect_community(nets, args.comm_method, book_list, args.net_dir, args.save_labels)
 
     markov_nets = generate_markov(comm_labels, cuts, book_list, args.markov_dir, args.save_markov)
+
+    extracted_motifs = motif_extraction(markov_nets, cuts, book_list, args.motif_dir, args.save_motifs)
 
     #texts, labels = load_data('book_list_CAT.txt', 'label_list_CAT.txt', 'data/livrosCategorias')
 
@@ -259,6 +289,8 @@ def parse_arguments(argv):
     parser.add_argument('--range_cut_begin', type=float, help='Markov range cut (begin)', default=0.01)
     parser.add_argument('--range_cut_end', type=float, help='Markov range cut (end)', default=0.205)
     parser.add_argument('--range_cut_step', type=float, help='Markov range cut (end)', default=0.005)
+    parser.add_argument('--save_motifs', help='Saves all motifs.', action='store_true')
+    parser.add_argument('--motifs_dir', type=str, help='Directory to save motifs in csv format', default='motifs/')
 
     return parser.parse_args(argv)
 

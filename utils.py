@@ -271,7 +271,6 @@ def extract_weighted_motif(g):
         weighted_motif[13] = weighted_motif[13] / 6
         return motif, weighted_motif
 
-
     # simplify removes the weights if combine_edges = None
     g = g.simplify(combine_edges="sum")
     adjacency_matrix = g.get_adjacency()
