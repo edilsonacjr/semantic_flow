@@ -14,7 +14,7 @@ from collections import defaultdict
 from sklearn.metrics.pairwise import euclidean_distances
 
 from igraph import Graph, ADJ_UNDIRECTED
-from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
 
 from utils import to_xnet
 from utils import extract_motif
@@ -28,7 +28,7 @@ BOOKS_DIR = 'data/cat/'
 WORD2VEC_FILE = ''
 
 # Log file
-LOG_FILE = 'log.txt']
+LOG_FILE = 'log.txt'
 
 def main_old(args):
 
@@ -217,7 +217,6 @@ def motif_extraction(networks, cuts, book_names, motif_dir, save_motifs=True):
     motifs = defaultdict(list)
     weighted_motif = defaultdict(list)
 
-
     cuts = ['full'] + cuts
     for book_nets, book_name in zip(networks, book_names):
 
@@ -247,7 +246,10 @@ def main(args):
 
     texts, labels = load_data(args.book_list_file, args.label_list_file, args.book_dir)
 
-    model = None
+    #if
+    from collections import defaultdict
+    model = defaultdict(lambda: np.random.rand(1, 300)[0])
+    #KeyedVectors.load_word2vec_format(args.word2vec_file, binary=True)
 
     with open(args.book_list_file, 'r') as books_f:
         book_list = books_f.read().split()
