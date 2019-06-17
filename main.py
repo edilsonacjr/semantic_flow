@@ -20,16 +20,6 @@ from utils import to_xnet
 from utils import extract_motif
 from utils import extract_weighted_motif
 
-# File with the list of books to be used.
-BOOKS = 'book_list_CAT.txt'
-BOOKS_DIR = 'data/cat/'
-
-# Word embedding file, other models such as Glove can be used but the load method must change.
-WORD2VEC_FILE = ''
-
-# Log file
-LOG_FILE = 'log.txt'
-
 def main_old(args):
 
     tokenize = nltk.tokenize.RegexpTokenizer('(?u)\\b\\w\\w+\\b')
@@ -130,26 +120,35 @@ def generate_net(texts_sents, model, book_names, sent_dir, net_dir, save_nets=Tr
                         parag_M.append(model[token])
 
                 if parag_M:
-                    sent_file.write(' '.join(sent).replace('\n', ' ') + '\n\n')
+                    sent_file.write(' '.join(sent).replace('\n', ' ') + '\n')
                     M.append(np.average(parag_M, axis=0))
 
         eucl = euclidean_distances(M)
+        print('m', euclidean_distances([M[-1]], [M[-2]]))
+        #np.savetxt('output/m.np', M)
+        #del M
 
-        del M
+
+        simi_m = 1. / (1. + eucl)
+        #np.savetxt('output/simi.np', simi_m)
+        print(simi_m[1922][1921])
 
         k = 1
         while True:
-            simi_m = 1 / (1 + eucl)
-            to_remove = simi_m.shape[0] - (k + 1)
-
-            for vec in simi_m:
+            simi = simi_m.copy()
+            print(simi[1922][1921])
+            to_remove = simi.shape[0] - (k + 1)
+            for vec in simi:
                 vec[vec.argsort()[:to_remove]] = 0
-
-            g = Graph.Weighted_Adjacency(simi_m.tolist(), mode=ADJ_UNDIRECTED, loops=False)
-
+            g = Graph.Weighted_Adjacency(simi.tolist(), mode=ADJ_UNDIRECTED, loops=False)
             if g.is_connected():
                 break
             k += 1
+            print(k)
+
+        print(g.summary())
+        print('Is connected:', g.is_connected())
+        print('Num. of components:', g.components().summary())
         del simi_m
 
         if save_nets:
@@ -169,8 +168,9 @@ def detect_community(nets, method, book_names, net_dir, save_labels=True):
             comm = getattr(g, method)()
             comm = comm.as_clustering()
         y_pred = comm.membership
+        print(' modularity:', comm.modularity)
         if save_labels:
-            np.savetxt(os.path.join(net_dir, book_name, '_labels.txt'), y_pred, fmt='%d')
+            np.savetxt(os.path.join(net_dir, book_name + '_labels.txt'), y_pred, fmt='%d')
 
         comm_labels.append(y_pred)
 
@@ -217,7 +217,7 @@ def motif_extraction(networks, cuts, book_names, motif_dir, save_motifs=True):
     motifs = defaultdict(list)
     weighted_motif = defaultdict(list)
 
-    cuts = ['full'] + cuts
+    cuts = np.append(['full'], cuts)
     for book_nets, book_name in zip(networks, book_names):
 
         for individual_net, cut in zip(book_nets, cuts):
@@ -232,41 +232,47 @@ def motif_extraction(networks, cuts, book_names, motif_dir, save_motifs=True):
     if save_motifs:
         for cut in cuts:
             df_motif = pd.DataFrame(motifs[cut])
-            df_motif.to_csv(os.path.join(motif_dir, book_name + '_' + str(cut) + '.csv'))
+            df_motif.to_csv(os.path.join(motif_dir, book_name + '_' + str(cut) + '.csv'), index=False)
             out_motifs.append(df_motif)
 
             df_weighted = pd.DataFrame(motifs[cut])
-            df_weighted.to_csv(os.path.join(motif_dir, book_name + '_weighted_' + str(cut) + '.csv'))
+            df_weighted.to_csv(os.path.join(motif_dir, book_name + '_weighted_' + str(cut) + '.csv'),
+                               index=False)
             out_weighted.append(df_weighted)
 
     return out_motifs, out_weighted
 
 
 def main(args):
+    # Downloading NLTK data
+    nltk.download('punkt')
 
+    print('load data')
     texts, labels = load_data(args.book_list_file, args.label_list_file, args.book_dir)
 
-    #if
-    from collections import defaultdict
-    model = defaultdict(lambda: np.random.rand(1, 300)[0])
-    #KeyedVectors.load_word2vec_format(args.word2vec_file, binary=True)
+    # TODO: Add BERT as a option
+
+    print('load word embeddings')
+    model = KeyedVectors.load_word2vec_format(args.word2vec_file, binary=True)
+
+    # Testing pipeline without loading a real word embeddings
+    # from collections import defaultdict
+    # model = defaultdict(lambda: np.random.rand(1, 300)[0])
 
     with open(args.book_list_file, 'r') as books_f:
         book_list = books_f.read().split()
 
     cuts = np.arange(args.range_cut_begin, args.range_cut_end, args.range_cut_step)
-
+    print('prep data')
     texts_sents = prep_text(texts)
-
+    print('generate_net')
     nets = generate_net(texts_sents, model, book_list, args.sent_dir, args.net_dir, args.save_nets)
-
+    print('detect_community')
     comm_labels = detect_community(nets, args.comm_method, book_list, args.net_dir, args.save_labels)
-
+    print('generate_markov')
     markov_nets = generate_markov(comm_labels, cuts, book_list, args.markov_dir, args.save_markov)
-
+    print('motif_extraction')
     extracted_motifs = motif_extraction(markov_nets, cuts, book_list, args.motif_dir, args.save_motifs)
-
-    #texts, labels = load_data('book_list_CAT.txt', 'label_list_CAT.txt', 'data/livrosCategorias')
 
 
 def parse_arguments(argv):
@@ -280,8 +286,9 @@ def parse_arguments(argv):
                         default='data/')
     parser.add_argument('--log_file', type=str, help='File to store log data.', default='log.txt')
     parser.add_argument('--word2vec_file', type=str, help='File to store log data.', default='embedding.bin')
-    parser.add_argument('--net_dir', type=str, help='Directory to save net format', default='nets/')
-    parser.add_argument('--save_graphs', help='Saves all networks in xnet format.', action='store_true')
+    parser.add_argument('--sent_dir', type=str, help='Directory to save net format', default='sent/')
+    parser.add_argument('--net_dir', type=str, help='Directory to save net format', default='net/')
+    parser.add_argument('--save_nets', help='Saves all networks in xnet format.', action='store_true')
     parser.add_argument('--save_labels', help='Saves all detected communities in a txt file.', action='store_true')
     parser.add_argument('--comm_method', type=str, choices=['community_multilevel', 'community_leading_eigenvector',
                                                             'community_fastgreedy', 'community_walktrap'],
@@ -292,11 +299,11 @@ def parse_arguments(argv):
     parser.add_argument('--range_cut_end', type=float, help='Markov range cut (end)', default=0.205)
     parser.add_argument('--range_cut_step', type=float, help='Markov range cut (end)', default=0.005)
     parser.add_argument('--save_motifs', help='Saves all motifs.', action='store_true')
-    parser.add_argument('--motifs_dir', type=str, help='Directory to save motifs in csv format', default='motifs/')
+    parser.add_argument('--motif_dir', type=str, help='Directory to save motifs in csv format', default='motifs/')
 
     return parser.parse_args(argv)
 
 
 if __name__ == '__main__':
-    args = parse_arguments(sys.argv)
+    args = parse_arguments(sys.argv[1:])
     main(args)

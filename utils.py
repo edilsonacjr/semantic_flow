@@ -143,6 +143,8 @@ def extract_motif(g):
     total_motifs = sum(motif_freq)
     if total_motifs != 0:
         motif_perce = [x / float(total_motifs) for x in motif_freq]
+    else:
+        motif_perce = motif_freq
 
     return motif_freq[1:], motif_perce[1:]
 
@@ -281,8 +283,10 @@ def extract_weighted_motif(g):
     motif_freq, weighted_motifs = calculate_motifs(adjacency_matrix, weight_matrix, size)
 
     total_motifs = sum(motif_freq)
-    motif_perce = []
+
     if total_motifs != 0:
         motif_perce = [x / float(total_motifs) for x in motif_freq]
+    else:
+        motif_perce = motif_freq
 
     return motif_freq[1:], motif_perce[1:], weighted_motifs[1:]
