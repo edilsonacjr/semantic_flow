@@ -20,54 +20,6 @@ from utils import to_xnet
 from utils import extract_motif
 from utils import extract_weighted_motif
 
-def main_old(args):
-
-    tokenize = nltk.tokenize.RegexpTokenizer('(?u)\\b\\w\\w+\\b')
-
-    stopwords = nltk.corpus.stopwords.words('english')
-    embedding_model = Word2Vec.load_word2vec_format('../GoogleNews-vectors-negative300.bin', binary=True)
-
-    with open(BOOKS, 'r') as f_books:
-        book_list = f_books.read().split()
-
-    for book in book_list:
-        with open(BOOKS_DIR+book, 'r') as book_file:
-            text = book_file.read()
-
-            M = []
-
-            sentences = nltk.sent_tokenize(text)
-            for sent in sentences:
-                original_tokens = tokenize.tokenize(sent)
-
-                # Set string to lower case
-                # Filter of stopwords
-                # Filter of numbers
-                # Filter of string of size 1
-                # Words not in the embedding model are discarded
-                tokens = [w.lower() for w in original_tokens if w.lower() not in stopwords and
-                          not w.isnumeric() and len(w) > 1 and w.lower() in embedding_model]
-
-                parag_M = []
-
-                for token in tokens:
-                    parag_M.append(embedding_model[token])
-
-                if parag_M:
-                    sent_file.write(sent.replace('\n', ' ') + '\n\n')
-                    M.append(np.average(parag_M, axis=0))
-
-
-            # Log
-            if os.path.exists(LOG_FILE):
-                append_write = 'a'  # append if already exists
-            else:
-                append_write = 'w'
-
-            with open(LOG_FILE, append_write) as log_file:
-                log_file.write('BOOK: {}\n'.format(book))
-                log_file.write('Num. of sentences: {}\n'.format(len(sentences)))
-
 
 def load_data(book_list_file, label_list_file, book_dir):
     texts = []
@@ -124,31 +76,24 @@ def generate_net(texts_sents, model, book_names, sent_dir, net_dir, save_nets=Tr
                     M.append(np.average(parag_M, axis=0))
 
         eucl = euclidean_distances(M)
-        print('m', euclidean_distances([M[-1]], [M[-2]]))
-        #np.savetxt('output/m.np', M)
-        #del M
-
+        del M
 
         simi_m = 1. / (1. + eucl)
-        #np.savetxt('output/simi.np', simi_m)
-        print(simi_m[1922][1921])
 
         k = 1
         while True:
             simi = simi_m.copy()
-            print(simi[1922][1921])
             to_remove = simi.shape[0] - (k + 1)
+
             for vec in simi:
                 vec[vec.argsort()[:to_remove]] = 0
+
             g = Graph.Weighted_Adjacency(simi.tolist(), mode=ADJ_UNDIRECTED, loops=False)
+
             if g.is_connected():
                 break
             k += 1
-            print(k)
 
-        print(g.summary())
-        print('Is connected:', g.is_connected())
-        print('Num. of components:', g.components().summary())
         del simi_m
 
         if save_nets:
