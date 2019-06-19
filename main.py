@@ -3,6 +3,7 @@
 import os
 import sys
 import argparse
+import json
 
 
 import nltk
@@ -61,6 +62,53 @@ def prep_text(texts):
         final_texts_sents.append(final_sents)
 
     return final_texts_sents
+
+
+def generate_net_bert(texts_sents, bert_dir, book_names, sent_dir, net_dir, save_nets=True):
+    nets = []
+    for sents, book_name in zip(texts_sents, book_names):
+        with open(os.path.join(sent_dir, book_name), 'w') as sent_file:
+            for sent in sents:
+                sent_file.write(' '.join(sent).replace('\n', ' ') + '\n')
+        M = []
+
+        # run BERT with the official code from the paper
+
+        # TODO: Run bert of sents
+
+        # load BERT generated features
+        with open('/tmp/out_bert.jsonl') as vectors_file:
+            for line in vectors_file:
+                feature_json = json.loads(line)
+                M.append(feature_json['features'][0]['layers'][0]['values'])
+
+        eucl = euclidean_distances(M)
+        del M
+
+        simi_m = 1. / (1. + eucl)
+
+        k = 1
+        while True:
+            simi = simi_m.copy()
+            to_remove = simi.shape[0] - (k + 1)
+
+            for vec in simi:
+                vec[vec.argsort()[:to_remove]] = 0
+
+            g = Graph.Weighted_Adjacency(simi.tolist(), mode=ADJ_UNDIRECTED, loops=False)
+
+            if g.is_connected():
+                break
+            k += 1
+
+        del simi_m
+
+        if save_nets:
+            to_xnet(g, os.path.join(net_dir, book_name), names=False)
+
+        nets.append(g)
+
+    return nets
 
 
 def generate_net(texts_sents, model, book_names, sent_dir, net_dir, save_nets=True):
@@ -200,8 +248,13 @@ def main(args):
 
     # TODO: Add BERT as a option
 
-    print('load word embeddings')
-    model = KeyedVectors.load_word2vec_format(args.word2vec_file, binary=True)
+    if args.encoding_method == 'word2vec':
+        print('load word embeddings')
+        model = KeyedVectors.load_word2vec_format(args.word2vec_file, binary=True)
+    elif args.encoding_method == 'bert':
+        print('BERT selected')
+    else:
+        raise ValueError('Encoding method not implemented.')
 
     # Testing pipeline without loading a real word embeddings
     # from collections import defaultdict
@@ -213,14 +266,23 @@ def main(args):
     cuts = np.arange(args.range_cut_begin, args.range_cut_end, args.range_cut_step)
     print('prep data')
     texts_sents = prep_text(texts)
+
     print('generate_net')
-    nets = generate_net(texts_sents, model, book_list, args.sent_dir, args.net_dir, args.save_nets)
+    if args.encoding_method == 'word2vec':
+        nets = generate_net(texts_sents, model, book_list, args.sent_dir, args.net_dir, args.save_nets)
+    elif args.encoding_method == 'bert':
+        nets = generate_net_bert(texts_sents, args.bert_dir, book_list, args.sent_dir, args.net_dir, args.save_nets)
+
     print('detect_community')
     comm_labels = detect_community(nets, args.comm_method, book_list, args.net_dir, args.save_labels)
+
     print('generate_markov')
     markov_nets = generate_markov(comm_labels, cuts, book_list, args.markov_dir, args.save_markov)
+
     print('motif_extraction')
     extracted_motifs = motif_extraction(markov_nets, cuts, book_list, args.motif_dir, args.save_motifs)
+
+    print('end')
 
 
 def parse_arguments(argv):
@@ -233,7 +295,10 @@ def parse_arguments(argv):
     parser.add_argument('--book_dir', type=str, help='Directory where the file of each book is stored.',
                         default='data/')
     parser.add_argument('--log_file', type=str, help='File to store log data.', default='log.txt')
+    parser.add_argument('--encoding_method', type=str, choices=['word2vec', 'bert'],
+                        help='Encoding method of the sentences.', default='word2vec')
     parser.add_argument('--word2vec_file', type=str, help='File to store log data.', default='embedding.bin')
+    parser.add_argument('--bert_dir', type=str, help='File to store log data.', default='bert/uncased_L-12_H-768_A-12')
     parser.add_argument('--sent_dir', type=str, help='Directory to save net format', default='sent/')
     parser.add_argument('--net_dir', type=str, help='Directory to save net format', default='net/')
     parser.add_argument('--save_nets', help='Saves all networks in xnet format.', action='store_true')
