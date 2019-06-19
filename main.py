@@ -14,11 +14,15 @@ from collections import defaultdict
 from sklearn.metrics.pairwise import euclidean_distances
 
 from igraph import Graph, ADJ_UNDIRECTED
+from igraph import arpack_options
 from gensim.models import KeyedVectors
 
 from utils import to_xnet
 from utils import extract_motif
 from utils import extract_weighted_motif
+
+# bug on ARPACK
+arpack_options.maxiter=300000
 
 
 def load_data(book_list_file, label_list_file, book_dir):
@@ -113,7 +117,7 @@ def detect_community(nets, method, book_names, net_dir, save_labels=True):
             comm = getattr(g, method)()
             comm = comm.as_clustering()
         y_pred = comm.membership
-        print(' modularity:', comm.modularity)
+
         if save_labels:
             np.savetxt(os.path.join(net_dir, book_name + '_labels.txt'), y_pred, fmt='%d')
 
@@ -155,7 +159,7 @@ def generate_markov(comm_labels, cuts, book_names, markov_dir, save_markov=True)
 
         all_markov_nets.append(markov_nets)
 
-        return all_markov_nets
+    return all_markov_nets
 
 
 def motif_extraction(networks, cuts, book_names, motif_dir, save_motifs=True):
@@ -164,7 +168,6 @@ def motif_extraction(networks, cuts, book_names, motif_dir, save_motifs=True):
 
     cuts = np.append(['full'], cuts)
     for book_nets, book_name in zip(networks, book_names):
-
         for individual_net, cut in zip(book_nets, cuts):
             motif_freq, motif_perce, weighted_motifs = extract_weighted_motif(individual_net)
             motif_freq, motif_perce = extract_motif(individual_net)
@@ -177,11 +180,11 @@ def motif_extraction(networks, cuts, book_names, motif_dir, save_motifs=True):
     if save_motifs:
         for cut in cuts:
             df_motif = pd.DataFrame(motifs[cut])
-            df_motif.to_csv(os.path.join(motif_dir, book_name + '_' + str(cut) + '.csv'), index=False)
+            df_motif.to_csv(os.path.join(motif_dir, 'extracted_' + str(cut) + '.csv'), index=False)
             out_motifs.append(df_motif)
 
-            df_weighted = pd.DataFrame(motifs[cut])
-            df_weighted.to_csv(os.path.join(motif_dir, book_name + '_weighted_' + str(cut) + '.csv'),
+            df_weighted = pd.DataFrame(weighted_motif[cut])
+            df_weighted.to_csv(os.path.join(motif_dir, 'extracted_weighted_' + str(cut) + '.csv'),
                                index=False)
             out_weighted.append(df_weighted)
 
