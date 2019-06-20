@@ -4,6 +4,7 @@ import os
 import sys
 import argparse
 import json
+import subprocess
 
 
 import nltk
@@ -74,7 +75,20 @@ def generate_net_bert(texts_sents, bert_dir, book_names, sent_dir, net_dir, save
 
         # run BERT with the official code from the paper
 
-        # TODO: Run bert of sents
+        bert_cmd = ['python',
+                    'bert/extract_features.py',
+                    '--input_file=%s' % os.path.join(sent_dir, book_name),
+                    '--output_file=/tmp/out_bert.jsonl',
+                    '--vocab_file=%s/vocab.txt' % bert_dir,
+                    '--bert_config_file=%s/bert_config.json' % bert_dir,
+                    '--init_checkpoint=%s/bert_model.ckpt' % bert_dir,
+                    '--layers=-1',
+                    '--max_seq_length=128',
+                    '--batch_size=8',
+                    ]
+
+        process = subprocess.Popen(bert_cmd, stdout=subprocess.PIPE)
+        process.wait()
 
         # load BERT generated features
         with open('/tmp/out_bert.jsonl') as vectors_file:
@@ -150,6 +164,7 @@ def generate_net(texts_sents, model, book_names, sent_dir, net_dir, save_nets=Tr
 
         if save_nets:
             to_xnet(g, os.path.join(net_dir, book_name), names=False)
+            g.write_pajek(os.path.join(net_dir, 'net_' + book_name + '.net'))
 
         nets.append(g)
 
@@ -298,7 +313,7 @@ def parse_arguments(argv):
     parser.add_argument('--encoding_method', type=str, choices=['word2vec', 'bert'],
                         help='Encoding method of the sentences.', default='word2vec')
     parser.add_argument('--word2vec_file', type=str, help='File to store log data.', default='embedding.bin')
-    parser.add_argument('--bert_dir', type=str, help='File to store log data.', default='bert/uncased_L-12_H-768_A-12')
+    parser.add_argument('--bert_dir', type=str, help='BERT pretrained model.', default='bert/uncased_L-12_H-768_A-12')
     parser.add_argument('--sent_dir', type=str, help='Directory to save net format', default='sent/')
     parser.add_argument('--net_dir', type=str, help='Directory to save net format', default='net/')
     parser.add_argument('--save_nets', help='Saves all networks in xnet format.', action='store_true')

@@ -1,6 +1,7 @@
 
 cls_results/*
 output/*
+output_test/*
 data/*
 .idea/*
 *.txt
