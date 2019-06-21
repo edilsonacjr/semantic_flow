@@ -12,6 +12,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import cross_validate
+from sklearn.preprocessing import normalize
 
 
 def main(args):
@@ -49,10 +50,11 @@ def main(args):
         for test in tests:
 
             X = np.concatenate([df_motif[df_motif['labels'] == x].drop('labels', axis=1) for x in test])
+            X = normalize(X, axis=1, norm='l1')
             y = np.concatenate([[x] * df_motif[df_motif['labels'] == x].shape[0] for x in test])
 
             clf = DecisionTreeClassifier()
-            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy')
+            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy', n_jobs=-1)
 
             results_unweighted['classifier'].append('CART')
             results_unweighted['accuracy'].append(np.mean(scores['test_score']))
@@ -61,7 +63,7 @@ def main(args):
             results_unweighted['subtask'].append('x'.join(test))
 
             clf = KNeighborsClassifier()
-            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy')
+            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy', n_jobs=-1)
 
             results_unweighted['classifier'].append('kNN')
             results_unweighted['accuracy'].append(np.mean(scores['test_score']))
@@ -70,7 +72,7 @@ def main(args):
             results_unweighted['subtask'].append('x'.join(test))
 
             clf = SVC(kernel='linear')
-            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy')
+            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy', n_jobs=-1)
 
             results_unweighted['classifier'].append('SVM')
             results_unweighted['accuracy'].append(np.mean(scores['test_score']))
@@ -79,7 +81,7 @@ def main(args):
             results_unweighted['subtask'].append('x'.join(test))
 
             clf = GaussianNB()
-            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy')
+            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy', n_jobs=-1)
 
             results_unweighted['classifier'].append('NB')
             results_unweighted['accuracy'].append(np.mean(scores['test_score']))
@@ -119,7 +121,7 @@ def main(args):
             y = np.concatenate([[x] * df_motif[df_motif['labels'] == x].shape[0] for x in test])
 
             clf = DecisionTreeClassifier()
-            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy')
+            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy', n_jobs=-1)
 
             results_weighted['classifier'].append('CART')
             results_weighted['accuracy'].append(np.mean(scores['test_score']))
@@ -128,7 +130,7 @@ def main(args):
             results_weighted['subtask'].append('x'.join(test))
 
             clf = KNeighborsClassifier(1)
-            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy')
+            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy', n_jobs=-1)
 
             results_weighted['classifier'].append('kNN')
             results_weighted['accuracy'].append(np.mean(scores['test_score']))
@@ -137,7 +139,7 @@ def main(args):
             results_weighted['subtask'].append('x'.join(test))
 
             clf = SVC(kernel='linear')
-            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy')
+            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy', n_jobs=-1)
 
             results_weighted['classifier'].append('SVM')
             results_weighted['accuracy'].append(np.mean(scores['test_score']))
@@ -146,7 +148,7 @@ def main(args):
             results_weighted['subtask'].append('x'.join(test))
 
             clf = GaussianNB()
-            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy')
+            scores = cross_validate(clf, X, y, cv=10, scoring='accuracy', n_jobs=-1)
 
             results_weighted['classifier'].append('NB')
             results_weighted['accuracy'].append(np.mean(scores['test_score']))

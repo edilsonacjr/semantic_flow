@@ -119,6 +119,7 @@ def generate_net_bert(texts_sents, bert_dir, book_names, sent_dir, net_dir, save
 
         if save_nets:
             to_xnet(g, os.path.join(net_dir, book_name), names=False)
+            g.write_pajek(os.path.join(net_dir, 'net_' + book_name + '.net'))
 
         nets.append(g)
 
@@ -164,7 +165,6 @@ def generate_net(texts_sents, model, book_names, sent_dir, net_dir, save_nets=Tr
 
         if save_nets:
             to_xnet(g, os.path.join(net_dir, book_name), names=False)
-            g.write_pajek(os.path.join(net_dir, 'net_' + book_name + '.net'))
 
         nets.append(g)
 
@@ -260,8 +260,6 @@ def main(args):
 
     print('load data')
     texts, labels = load_data(args.book_list_file, args.label_list_file, args.book_dir)
-
-    # TODO: Add BERT as a option
 
     if args.encoding_method == 'word2vec':
         print('load word embeddings')
