@@ -1,6 +1,7 @@
 
 cls_results/*
 cls_results_freq/*
+cls_results_freq_bert/*
 output/*
 output_test/*
 data/*

@@ -119,8 +119,13 @@ def generate_net_bert(texts_sents, bert_dir, book_names, sent_dir, net_dir, save
 
         if save_nets:
             to_xnet(g, os.path.join(net_dir, book_name), names=False)
-            g.write_pajek(os.path.join(net_dir, 'net_' + book_name + '.net'))
+            #g.write_pajek(os.path.join(net_dir, 'net_' + book_name + '.net'))
 
+        """
+        # Code for loading saved networks and reuse part of the pipeline.
+        net_dir = 'output_bert/community_multilevel/net_dir'
+        g = Graph.Read_Pajek(os.path.join(net_dir, 'net_' + book_name + '.net'))
+        """
         nets.append(g)
 
     return nets

@@ -5,7 +5,7 @@
 methods="community_multilevel community_leading_eigenvector community_fastgreedy community_walktrap"
 
 #cls_results
-SAVE_DIR="cls_results_freq"
+SAVE_DIR="cls_results_freq_bert"
 mkdir $SAVE_DIR
 for val in $methods; do
     echo $val
@@ -16,5 +16,5 @@ for val in $methods; do
     --range_cut_begin 0.01 \
     --range_cut_end 0.205 \
     --range_cut_step 0.005 \
-    --motif_dir output/$val/motif_dir
+    --motif_dir output_bert/$val/motif_dir
 done

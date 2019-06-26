@@ -3,11 +3,11 @@
 #!/bin/bash
 # Run the framework with all community detection methods for comparison
 
-methods="community_multilevel"
-#community_leading_eigenvector community_fastgreedy community_walktrap
+methods="community_leading_eigenvector community_fastgreedy community_walktrap"
+#community_multilevel community_leading_eigenvector community_fastgreedy community_walktrap
 
 ROOT_DIR="output_bert"
-mkdir $ROOT_DIR
+#mkdir $ROOT_DIR
 for val in $methods; do
     echo $val
     mkdir -p $ROOT_DIR/$val/sent_dir

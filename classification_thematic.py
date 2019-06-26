@@ -62,7 +62,7 @@ def main(args):
             results_unweighted['cut'].append(cut)
             results_unweighted['subtask'].append('x'.join(test))
 
-            clf = KNeighborsClassifier()
+            clf = KNeighborsClassifier(1)
             scores = cross_validate(clf, X, y, cv=10, scoring='accuracy', n_jobs=-1)
 
             results_unweighted['classifier'].append('kNN')
