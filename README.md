@@ -19,9 +19,9 @@ Please cite [[1]](#Semantic-flow-in-language-networks) if using this code.
 }
 ```
 
-## Tutorial
+# Tutorial
 
-# 1. Setup env
+## 1. Setup env
 
 First you need to download and install Anaconda, a tutorial can be found [here](https://docs.anaconda.com/anaconda/install/). Then just setup a new enviroment this project:
 
@@ -34,7 +34,7 @@ conda env create -f environment.yaml
 Obs.: the last line of the environment.yaml needs to be edited if Anaconda was installed in a non conventional way.
 
 
-# 2. Download Word2Vec and BERT
+## 2. Download Word2Vec and BERT
 
 Here we choose to use the pre-trained word2vec made available by Mikolov ([link](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing)).
 
@@ -46,7 +46,7 @@ wget https://storage.googleapis.com/bert_models/2018_10_18/uncased_L-12_H-768_A-
 unzip uncased_L-12_H-768_A-12.zip
 ```
 
-# 3. Run Semantic flow
+## 3. Run Semantic flow
 
 Now that you have a working environmente its possible to run the Semantic Flow framework.
 
@@ -114,7 +114,7 @@ python main.py \
 --motif_dir $ROOT_DIR/$EXPERIMENT/motif_dir
 ```
 
-# 4. Classification using extracted features (motifs)
+## 4. Classification using extracted features (motifs)
 
 Here we execyte the classification process used [[1]](#Semantic-flow-in-language-networks).
 
